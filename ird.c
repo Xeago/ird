@@ -29,10 +29,11 @@ static struct option
 long_options[] = {
     { "help",    no_argument, 0, 'h' },
     { "preview", no_argument, 0, 'p' },
+    { "safari",  no_argument, 0, 's' },
     { 0, 0, 0, 0 },
 };
 
-static const char *options = "hp";
+static const char *options = "hps";
 
 IOHIDElementCookie buttonNextID = 0;
 IOHIDElementCookie buttonPreviousID = 0;
@@ -48,6 +49,7 @@ typedef struct cookie_struct
 } *cookie_struct_t;
 
 static int drivePreview = 0;
+static int driveSafari = 0;
 
 void            usage(void);
 void            PreviewChangeSlide(IOHIDElementCookie direction);
@@ -82,6 +84,16 @@ PreviewChangeSlide(IOHIDElementCookie button)
         system("/usr/bin/osascript -e \'tell application \"Preview\" to activate\' -e \'tell application \"System Events\" to click menu item \"Next Item\" of menu \"Go\" of menu bar item \"Go\" of menu bar 1 of application process \"Preview\"\' > /dev/null");
     else if (button == buttonPreviousID)
         system("/usr/bin/osascript -e \'tell application \"Preview\" to activate\' -e \'tell application \"System Events\" to click menu item \"Previous Item\" of menu \"Go\" of menu bar item \"Go\" of menu bar 1 of application process \"Preview\"\' > /dev/null");      
+}
+
+void SafariChangeSlide(IOHIDElementCookie button)
+{
+    //tell application "Safari" to activate
+    //tell application "System Events" to keystroke (ASCII character 28)
+    if (button == buttonNextID)
+        system("/usr/bin/osascript -e \'tell application \"Safari\" to activate\' -e \'tell application \"System Events\" to keystroke (ASCII character 29)' > /dev/null");
+    else if (button == buttonPreviousID)
+        system("/usr/bin/osascript -e \'tell application \"Safari\" to activate\' -e \'tell application \"System Events\" to keystroke (ASCII character 28)' > /dev/null");      
 }
 
 inline void
@@ -121,6 +133,9 @@ QueueCallbackFunction(void *target, IOReturn result, void *refcon, void *sender)
         if (!ret) {
             if (drivePreview) {
                 if (event.value) PreviewChangeSlide(event.elementCookie);
+            }
+            else if (driveSafari) {
+                if (event.value) SafariChangeSlide(event.elementCookie);
             }
             else
                 printf("%#lx %s\n", (long unsigned int)event.elementCookie,
@@ -370,6 +385,9 @@ main (int argc, char **argv)
             break;
         case 'p':
             drivePreview = 1;
+            break;
+        case 's':
+            driveSafari = 1;
             break;
         default:
             usage();
